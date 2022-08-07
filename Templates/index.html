@@ -1,0 +1,96 @@
+<html>
+<head>
+    <style>
+        body { font-family: arial; margin: 20px; }
+        td { padding: 5px; }
+        table { padding: 10px;}
+        .bullish { background: green; color: white; }
+        .bearish { background: red; color: white; }
+        th, td {
+            border-style:solid;
+            border-color: #96D4D4;
+        }
+        ul {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #333;
+          }
+          
+          li {
+            float: left;
+          }
+          
+          li a {
+            display: block;
+            color: white;
+            text-align: center;
+            padding: 14px 16px;
+            text-decoration: none;
+          }
+          
+          li a:hover {
+            background-color: #111;
+          }
+        
+    </style>
+    <script type="text/javascript">
+        setTimeout(function () {
+          var date =new Date();
+          if (date.getHours() >= 9 && date.getHours() <= 16 ) {
+            location.reload();
+          }
+          //location.reload();
+        }, 300 * 1000);
+    </script>
+</head>
+<body>
+    <ul>
+        <li><a class="active" href="#home">Home</a></li>
+        <li><a href="/trendingoi">Trending OI</a></li>
+        <li><a href="#contact">Stock Screener</a></li>
+        <li><a href="#about">About</a></li>
+      </ul>
+    <h1>Open Interest Analysis</h1>
+    <table class="table table-striped">
+        <tr>
+            {% for column in columns %}
+                <td>{{ column }}</td>
+            {% endfor %}
+        </tr>
+        {% for row in rowdata %}
+        <tr>
+            
+            <td>
+                {{ row[0] }}
+            </td>
+            <td>
+                {{ row[1] }}
+            </td>
+            <td>
+                {{ row[2] }}
+            </td>
+            <td>
+                {{ row[3] }}
+            </td>
+            <td>
+                {{ row[4] }}
+            </td>
+            <td>
+                {{ row[5] }}
+            </td>
+            <td>
+                {{ row[6] }}
+            </td>
+            <td>
+                {{ row[7] }}
+            </td>
+            <td>
+                {{ row[8] }}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>

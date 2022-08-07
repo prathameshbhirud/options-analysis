@@ -1,0 +1,28 @@
+<html>
+<head>
+    <style>
+        body { font-family: arial; margin: 20px; }
+        td { padding: 5px; }
+        table { padding: 10px;}
+        .bullish { background: green; color: white; }
+        .bearish { background: red; color: white; }
+        th, td {
+            border-style:solid;
+            border-color: #96D4D4;
+          }
+    </style>
+    <script type="text/javascript">
+        setTimeout(function () {
+          var date =new Date();
+          if (date.getHours() >= 9 && date.getHours() <= 21 ) {
+            location.reload();
+          }
+          //location.reload();
+        }, 300 * 1000);
+    </script>
+</head>
+<body>
+    <h1>Trending</h1>
+    <img src="{{ image }}"/>
+</body>
+</html>
