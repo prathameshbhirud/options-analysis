@@ -10,6 +10,29 @@
             border-style:solid;
             border-color: #96D4D4;
           }
+          ul {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #333;
+          }
+          
+          li {
+            float: left;
+          }
+          
+          li a {
+            display: block;
+            color: white;
+            text-align: center;
+            padding: 14px 16px;
+            text-decoration: none;
+          }
+          
+          li a:hover {
+            background-color: #111;
+          }
     </style>
     <script type="text/javascript">
         setTimeout(function () {
@@ -22,7 +45,14 @@
     </script>
 </head>
 <body>
-    <h1>Trending</h1>
+    <ul>
+      <li><a href="/">Home</a></li>
+      <li><a href="/trendingoi">Trending OI</a></li>
+      <li><a href="/screener">Stock Screener</a></li>
+      <li><a href="#about">About</a></li>
+    </ul>
+    <h1>TrendingOI</h1>
     <img src="{{ image }}"/>
+  </table>
 </body>
 </html>

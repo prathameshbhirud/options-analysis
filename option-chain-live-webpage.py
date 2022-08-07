@@ -23,6 +23,7 @@ columns = ['Time', 'Call OI Sum', 'Change in Call OI Sum', 'Put OI Sum', 'Change
 rowData = []
 ce_data = []
 pe_data = []
+top5TrendingOIData = []
 
 @app.route('/')
 def getdata():
@@ -145,17 +146,29 @@ def getdata():
 
 @app.route('/trendingoi')
 def trendingoi():
-    top5TrendingOIData = trending(ce_data, pe_data)
+    # rowData = []
+    # columns = ["Time", "Trending Strike Prices", "Change in OI"]
+    # global top5TrendingOIData
+    # top5TrendingOIData.append(trending(ce_data, pe_data))
+    # for m in top5TrendingOIData:
+    #     ce_or_pe = 'CE'
+    #     if m["ce"].isnull().values.any():
+    #         ce_or_pe = "PE"
+    #     rowData.append([m["time"], str(m["strike"])+ce_or_pe, m["changeinOpenInterest"]])
     
+    top5TrendingOIData = trending(ce_data, pe_data)
+    top5TrendingOIData["time"] = top5TrendingOIData["time"].astype("datetime64")
+    #top5TrendingOIData = top5TrendingOIData.set_index("time")
+
     fig = Figure()
     axis = fig.add_subplot(1, 1, 1)
     xs = top5TrendingOIData["time"]
     ys = top5TrendingOIData["coi"]
     axis.plot(xs, ys)
-
+    
     # Generate plot
     axis.grid()
-    #axis.plot(range(5), range(5), "ro-")
+    # #axis.plot(range(5), range(5), "ro-")
     
     # Convert plot to PNG image
     pngImage = io.BytesIO()
@@ -167,7 +180,7 @@ def trendingoi():
     
     #return Response(pngImage.getvalue(), mimetype='image/png')
 
-    return render_template("trendingoi.html", image=pngImageB64String)
+    return render_template("trendingoi.html", image=pngImageB64String, oi_data=rowData, columns=columns)
 
 #ternding OI is top 5 change in OI strike with CE/PE
 def trending(allCE, allPE):
@@ -184,5 +197,9 @@ def trending(allCE, allPE):
     df6 = df5[2:7]
     headers =  ["strike", "ltp", "oi", "coi", "time", "ce", "pe"]
     df6.columns = headers
+    
     return df6
 
+@app.route('/screener')
+def screener():
+    return render_template("screener.html")
