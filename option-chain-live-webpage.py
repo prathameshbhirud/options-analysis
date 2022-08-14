@@ -1,16 +1,18 @@
 from matplotlib.font_manager import json_load
 import requests
 import json
-import time
-import os
 from datetime import datetime
 from flask import Flask, escape, request, render_template, redirect, url_for, Response
 import pandas as pd
-# importing matplotlib module
 import matplotlib.pyplot as plt
 plt.style.use('default')
 import io
+from flask import Flask, escape, request, render_template
 import base64
+import talib
+import yfinance as yf
+import os, csv
+from patterns import candlestick_patterns
 
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
@@ -24,6 +26,7 @@ rowData = []
 ce_data = []
 pe_data = []
 top5TrendingOIData = []
+trendingOIData = []
 
 @app.route('/')
 def getdata():
@@ -115,6 +118,9 @@ def getdata():
     ce_data = allCE
     pe_data = allPE
 
+    global top5TrendingOIData
+    top5TrendingOIData = trending(ce_data, pe_data)
+
     pcr = sum(row[2] for row in allPE[1:]) / sum(row[2] for row in allCE[1:])
     print('PCR is :', pcr)
     
@@ -146,41 +152,36 @@ def getdata():
 
 @app.route('/trendingoi')
 def trendingoi():
-    # rowData = []
-    # columns = ["Time", "Trending Strike Prices", "Change in OI"]
-    # global top5TrendingOIData
-    # top5TrendingOIData.append(trending(ce_data, pe_data))
-    # for m in top5TrendingOIData:
-    #     ce_or_pe = 'CE'
-    #     if m["ce"].isnull().values.any():
-    #         ce_or_pe = "PE"
-    #     rowData.append([m["time"], str(m["strike"])+ce_or_pe, m["changeinOpenInterest"]])
+    rowData = []
+    columns = ["Time", "Trending Strike Prices in (Desc Order)", "Change in OI (respective to Strike Price)"]
     
-    top5TrendingOIData = trending(ce_data, pe_data)
-    top5TrendingOIData["time"] = top5TrendingOIData["time"].astype("datetime64")
-    #top5TrendingOIData = top5TrendingOIData.set_index("time")
+    global top5TrendingOIData
+    rowData = top5TrendingOIData
+    allStrikes = rowData['strike'].tolist()
+    allCOI = rowData['coi'].tolist()
+    global trendingOIData
+    trendingOIData.append([datetime.now().strftime("%H:%M:%S"), allStrikes, allCOI])
+    # top5TrendingOIData = top5TrendingOIData.set_index("time")
 
-    fig = Figure()
-    axis = fig.add_subplot(1, 1, 1)
-    xs = top5TrendingOIData["time"]
-    ys = top5TrendingOIData["coi"]
-    axis.plot(xs, ys)
+    # fig = Figure()
+    # axis = fig.add_subplot(1, 1, 1)
+    # xs = top5TrendingOIData["time"]
+    # ys = top5TrendingOIData["coi"]
+    # axis.plot(xs, ys)
     
-    # Generate plot
-    axis.grid()
-    # #axis.plot(range(5), range(5), "ro-")
+    # # Generate plot
+    # axis.grid()
+    # # #axis.plot(range(5), range(5), "ro-")
     
-    # Convert plot to PNG image
-    pngImage = io.BytesIO()
-    FigureCanvas(fig).print_png(pngImage)
+    # # Convert plot to PNG image
+    # pngImage = io.BytesIO()
+    # FigureCanvas(fig).print_png(pngImage)
     
-    # Encode PNG image to base64 string
-    pngImageB64String = "data:image/png;base64,"
-    pngImageB64String += base64.b64encode(pngImage.getvalue()).decode('utf8')
-    
-    #return Response(pngImage.getvalue(), mimetype='image/png')
+    # # Encode PNG image to base64 string
+    # pngImageB64String = "data:image/png;base64,"
+    # pngImageB64String += base64.b64encode(pngImage.getvalue()).decode('utf8')
 
-    return render_template("trendingoi.html", image=pngImageB64String, oi_data=rowData, columns=columns)
+    return render_template("trendingoi.html", oi_data=trendingOIData, columns=columns)
 
 #ternding OI is top 5 change in OI strike with CE/PE
 def trending(allCE, allPE):
@@ -188,18 +189,61 @@ def trending(allCE, allPE):
     time_now = dt1.strftime("%H:%M:%S")
     df2= pd.DataFrame(allCE[1:])
     df3= pd.DataFrame(allPE[1:])
-    df2['time'] = time_now
-    df3['time'] = time_now
-    df2['Ce'] = 'CE'
-    df3['Pe'] = 'PE'
+    df2.columns = ["strike", "ltp", "oi", "coi"]
+    df3.columns = ["strike", "ltp", "oi", "coi"]
+    df2['strike'] = df2['strike'].astype(str) + 'CE'
+    df3['strike'] = df3['strike'].astype(str) + 'PE'
     df4= pd.concat([df2,df3])
-    df5 = df4.sort_values(by=3 , ascending=False)
+    df5 = df4.sort_values(by=['coi'] , ascending=False)
     df6 = df5[2:7]
-    headers =  ["strike", "ltp", "oi", "coi", "time", "ce", "pe"]
+    headers =  ["strike", "ltp", "oi", "coi"]
     df6.columns = headers
-    
     return df6
 
 @app.route('/screener')
 def screener():
     return render_template("screener.html")
+
+@app.route('/extractdata')
+def extractdata():
+    with open('datasets/symbols.csv') as f:
+        for line in f:
+            if "," not in line:
+                continue
+            symbol = line.split(",")[0]
+            data = yf.download(symbol, start="2022-01-01", end=datetime.today().strftime('%Y-%m-%d'))
+            data.to_csv('datasets/daily/{}.csv'.format(symbol.replace(".","_")))
+
+    return {
+        "code": "success"
+    }
+    
+@app.route('/patterns')
+def patterns():
+    pattern  = request.args.get('pattern', False)
+    stocks = {}
+
+    with open('datasets/symbols.csv') as f:
+        for row in csv.reader(f):
+            stocks[row[0]] = {'company': row[1]}
+
+    if pattern:
+        for filename in os.listdir('datasets/daily'):
+            df = pd.read_csv('datasets/daily/{}'.format(filename))
+            pattern_function = getattr(talib, pattern)
+            symbol = filename.split('_')[0] + ".NS"
+
+            try:
+                results = pattern_function(df['Open'], df['High'], df['Low'], df['Close'])
+                last = results.tail(1).values[0]
+
+                if last > 0:
+                    stocks[symbol][pattern] = 'bullish'
+                elif last < 0:
+                    stocks[symbol][pattern] = 'bearish'
+                else:
+                    stocks[symbol][pattern] = None
+            except Exception as e:
+                print('failed on filename: ', filename)
+
+    return render_template('patterns.html', candlestick_patterns=candlestick_patterns, stocks=stocks, pattern=pattern)

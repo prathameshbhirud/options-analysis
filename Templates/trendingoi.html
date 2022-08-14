@@ -49,10 +49,30 @@
       <li><a href="/">Home</a></li>
       <li><a href="/trendingoi">Trending OI</a></li>
       <li><a href="/screener">Stock Screener</a></li>
-      <li><a href="#about">About</a></li>
+      <li><a href="/extractdata">Extract Data for Technical Analysis</a></li>
+      <li><a href="/patterns">Candlestick Patterns</a></li>
     </ul>
     <h1>TrendingOI</h1>
-    <img src="{{ image }}"/>
+    <table class="table table-striped">
+      <tr>
+          {% for column in columns %}
+              <td>{{ column }}</td>
+          {% endfor %}
+      </tr>
+      {% for row in oi_data %}
+      <tr>
+          <td>
+              {{ row[0] }}
+          </td>
+          <td>
+              {{ row[1] }}
+          </td>
+          <td>
+              {{ row[2] }}
+          </td>
+      </tr>
+      {% endfor %}
+  </table>
   </table>
 </body>
 </html>

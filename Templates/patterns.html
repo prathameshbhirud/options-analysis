@@ -1,0 +1,95 @@
+<html>
+<head>
+    <style>
+        body { font-family: arial; margin: 20px; }
+        td { padding: 5px; }
+        table { padding: 10px;}
+        .bullish { background: green; color: white; }
+        .bearish { background: red; color: white; }
+        th, td {
+            border-style:solid;
+            border-color: #96D4D4;
+        }
+        ul {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #333;
+          }
+          
+          li {
+            float: left;
+          }
+          
+          li a {
+            display: block;
+            color: white;
+            text-align: center;
+            padding: 14px 16px;
+            text-decoration: none;
+          }
+          
+          li a:hover {
+            background-color: #111;
+          }
+        
+    </style>
+    <script type="text/javascript">
+        setTimeout(function () {
+          var date =new Date();
+          if (date.getHours() >= 9 && date.getHours() <= 16 ) {
+            location.reload();
+          }
+          //location.reload();
+        }, 300 * 1000);
+    </script>
+</head>
+<body>
+    <ul>
+        <li><a href="/">Home</a></li>
+        <li><a href="/trendingoi">Trending OI</a></li>
+        <li><a href="/screener">Stock Screener</a></li>
+        <li><a href="/extractdata">Extract Data for Technical Analysis</a></li>
+        <li><a href="/patterns">Candlestick Patterns</a></li>
+    </ul>
+    <h1>Candlestick Patterns Detection</h1>
+    <form>
+        <select name="pattern">
+            <option value="">-- Select a Pattern --</option>
+            {% for key in candlestick_patterns %}
+                <option value="{{ key }}" {% if pattern == key %}selected="selected"{% endif %}>{{ candlestick_patterns[key] }}</option>
+            {% endfor %}
+        </select>
+
+        <input type="submit" value="Scan" />
+    </form>
+
+    <table>
+        <tr>
+            <th>symbol</th>
+            <th>company</th>
+            <th>signal</th>
+        </tr>
+        {% for stock in stocks %}
+            {% if stocks[stock][pattern] %}
+            <tr>
+                <td>
+                    {{ stock }}
+                </td>
+                <td>
+                    {{ stocks[stock]['company'] }}
+                </td>
+                <td class="{{ stocks[stock][pattern] }}">
+                    {{ stocks[stock][pattern]}}
+                </td>
+            <tr>
+                <td colspan="3">
+                    <img src="https://finviz.com/chart.ashx?t={{ stock }}&ty=c&ta=1&p=d&s=l" />
+                </td>
+            </tr>
+            {% endif %}
+        {% endfor %}
+    </table>
+</body>
+</html>
