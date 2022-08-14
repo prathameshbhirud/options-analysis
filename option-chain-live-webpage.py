@@ -22,7 +22,7 @@ import mysql.connector
 app = Flask(__name__)
 #app.config['DEBUG'] = True
 
-columns = ['Time', 'Call OI Sum', 'Change in Call OI Sum', 'Put OI Sum', 'Change in Put OI Sum', 'Diff of Change in OI', 'OI Signal', 'PCR', 'Futures LTP']
+columns = ['Time', 'Call OI Sum', 'Change in Call OI Sum', 'Put OI Sum', 'Change in Put OI Sum', 'Diff of Change in OI', 'OI Signal', 'PCR', 'Futures LTP', 'Futures VWAP']
 rowData = []
 ce_data = []
 pe_data = []
@@ -148,7 +148,8 @@ def getdata():
     elif change_call_OI > 3 * change_put_OI:
         oi_signal = "STRONG SELL"
     
-    dataToSave = [current_time, sum_call_OI, change_call_OI, sum_put_OI, change_put_OI,  diff_change_Call_OI_and_change_put_OI, oi_signal ,pcr, future_ltp]
+    futures_vwap = 0
+    dataToSave = [current_time, sum_call_OI, change_call_OI, sum_put_OI, change_put_OI,  diff_change_Call_OI_and_change_put_OI, oi_signal , pcr, future_ltp, futures_vwap]
     rowData.append(dataToSave)
     SaveToDB(dataToSave)
     return render_template('index.html', columns=columns, rowdata=rowData)
@@ -263,13 +264,12 @@ def SaveToDB(dataToSave):
         mycursor = connection.cursor()
         # mySql_Create_Table_Query = """CREATE TABLE oianalysis ( 
         #                           id INT AUTO_INCREMENT PRIMARY KEY,
-        #                           created_at DATETIME, 
+        #                           created_at varchar(20), 
         #                           sum_call_oi int(20),
         #                           change_call_oi int(20),
         #                           sum_put_oi int(20),
         #                           change_put_oi int(20),
-        #                           diff_change_call_oi int(25),
-        #                           diff_change_put_oi int(25),
+        #                           diff_change_Call_oi_and_change_put_oi int(25),
         #                           oi_signal varchar(20),
         #                           pcr float,
         #                           future_ltp float,
@@ -278,11 +278,12 @@ def SaveToDB(dataToSave):
         #                           """
 
         mycursor = connection.cursor()
+        # mycursor.execute(mySql_Create_Table_Query)
         sql = """INSERT INTO oianalysis (created_at, sum_call_oi, change_call_oi, sum_put_oi, change_put_oi,
-        diff_change_call_oi, sum_put_oi, change_put_oi, diff_change_call_oi, diff_change_put_oi,oi_signal,pcr
-        future_ltp, future_vwap) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
+        diff_change_Call_oi_and_change_put_oi, oi_signal, pcr, future_ltp, future_vwap) 
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
         mycursor.execute(sql, dataToSave)
-        mycursor.commit()
+        connection.commit()
     except mysql.connector.Error as error:
         print("Failed to create table in MySQL: {}".format(error))
     #finally:
