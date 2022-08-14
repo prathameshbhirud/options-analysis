@@ -16,6 +16,7 @@ from patterns import candlestick_patterns
 
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
+import mysql.connector
 
 
 app = Flask(__name__)
@@ -147,7 +148,9 @@ def getdata():
     elif change_call_OI > 3 * change_put_OI:
         oi_signal = "STRONG SELL"
     
-    rowData.append([current_time, sum_call_OI, change_call_OI, sum_put_OI, change_put_OI,  diff_change_Call_OI_and_change_put_OI, oi_signal ,pcr, future_ltp])
+    dataToSave = [current_time, sum_call_OI, change_call_OI, sum_put_OI, change_put_OI,  diff_change_Call_OI_and_change_put_OI, oi_signal ,pcr, future_ltp]
+    rowData.append(dataToSave)
+    SaveToDB(dataToSave)
     return render_template('index.html', columns=columns, rowdata=rowData)
 
 @app.route('/trendingoi')
@@ -247,3 +250,43 @@ def patterns():
                 print('failed on filename: ', filename)
 
     return render_template('patterns.html', candlestick_patterns=candlestick_patterns, stocks=stocks, pattern=pattern)
+
+def SaveToDB(dataToSave):
+    try:
+        
+        global connection
+        connection = mysql.connector.connect(host='localhost',
+                                            database="OptionsData",
+                                            user='root',
+                                            password='Mysqlpassword')
+
+        mycursor = connection.cursor()
+        # mySql_Create_Table_Query = """CREATE TABLE oianalysis ( 
+        #                           id INT AUTO_INCREMENT PRIMARY KEY,
+        #                           created_at DATETIME, 
+        #                           sum_call_oi int(20),
+        #                           change_call_oi int(20),
+        #                           sum_put_oi int(20),
+        #                           change_put_oi int(20),
+        #                           diff_change_call_oi int(25),
+        #                           diff_change_put_oi int(25),
+        #                           oi_signal varchar(20),
+        #                           pcr float,
+        #                           future_ltp float,
+        #                           future_vwap float
+        #                           )
+        #                           """
+
+        mycursor = connection.cursor()
+        sql = """INSERT INTO oianalysis (created_at, sum_call_oi, change_call_oi, sum_put_oi, change_put_oi,
+        diff_change_call_oi, sum_put_oi, change_put_oi, diff_change_call_oi, diff_change_put_oi,oi_signal,pcr
+        future_ltp, future_vwap) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
+        mycursor.execute(sql, dataToSave)
+        mycursor.commit()
+    except mysql.connector.Error as error:
+        print("Failed to create table in MySQL: {}".format(error))
+    #finally:
+        #if connection.is_connected():
+            # cursor.close()
+            # connection.close()
+            # print("MySQL connection is closed")
