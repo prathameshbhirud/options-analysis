@@ -150,9 +150,15 @@ def getdata():
     
     futures_vwap = 0
     dataToSave = [current_time, sum_call_OI, change_call_OI, sum_put_OI, change_put_OI,  diff_change_Call_OI_and_change_put_OI, oi_signal , pcr, future_ltp, futures_vwap]
+    
+    stringdata = ' '.join([str(i) for i in dataToSave])
     rowData.append(dataToSave)
-    SaveToDB(dataToSave)
-    return render_template('index.html', columns=columns, rowdata=rowData)
+    # SaveToDB(dataToSave)
+    SaveToTxtFile(stringdata)
+    data_For_rows = []
+    for a in ReadFromTextFile():
+        data_For_rows.append(ConvertToList(a))
+    return render_template('index.html', columns=columns, rowdata=data_For_rows)
 
 @app.route('/trendingoi')
 def trendingoi():
@@ -209,6 +215,7 @@ def screener():
     return render_template("screener.html")
 
 @app.route('/extractdata')
+
 def extractdata():
     with open('datasets/symbols.csv') as f:
         for line in f:
@@ -291,3 +298,31 @@ def SaveToDB(dataToSave):
             # cursor.close()
             # connection.close()
             # print("MySQL connection is closed")
+            
+def SaveToTxtFile(dataToSave):
+    # writing to file
+    # file1 = open('oi_data.txt', 'w')
+    # file1.writelines(dataToSave)
+    # file1.close()
+    
+    # Open the file in append & read mode ('a+')
+    with open("oi_data.txt", "a+") as file_object:
+        # Move read cursor to the start of file.
+        file_object.seek(0)
+        # If file is not empty then append '\n'
+        data = file_object.read(100)
+        if len(data) > 0 :
+            file_object.write("\n")
+        # Append text at the end of file
+        file_object.write(dataToSave)
+    
+def ReadFromTextFile():
+    # removing the new line characters
+    with open('oi_data.txt') as f:
+        lines = [line.rstrip() for line in f]
+    
+    return lines
+
+def ConvertToList(string):
+    li = list(string.split(" "))
+    return li
