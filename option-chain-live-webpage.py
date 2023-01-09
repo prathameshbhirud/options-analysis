@@ -1,7 +1,7 @@
 from matplotlib.font_manager import json_load
 import requests
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import Flask, escape, request, render_template, redirect, url_for, Response
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -30,7 +30,12 @@ top5TrendingOIData = []
 trendingOIData = []
 
 @app.route('/')
-def getdata():
+def home():
+    retrieveAndSaveData()
+    clearTextFile()
+    return render_template('index.html', columns=columns, rowdata=ReadFromTextFileAndConvertToList())
+
+def retrieveAndSaveData():
     headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; '
                 'x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.117 Safari/537.36'}
 
@@ -49,7 +54,7 @@ def getdata():
     #     f.write(nifty_oi_data.text)
     
     #future price
-    last_thursday = "28-07-2022"
+    last_thursday = "25-01-2023"
     url_future_ltp = f"https://www.nseindia.com/api/quote-derivative?symbol=NIFTY&identifier=FUTIDXNIFTY{last_thursday}XX0.00"
     future_data = requests.get(url_future_ltp, headers=headers, cookies=cookies)
     future_ltp = json.loads(future_data.text)["underlyingValue"]
@@ -126,6 +131,7 @@ def getdata():
     print('PCR is :', pcr)
     
     now = datetime.now()
+    current_date = now.strftime("%d-%m-%y")
     current_time = now.strftime("%H:%M:%S")
     print("Current Time =", current_time)
     global rowData
@@ -144,21 +150,21 @@ def getdata():
         oi_signal = "SELL"
     
     if change_put_OI >= 3 * change_call_OI :
-         oi_signal = "STRONG BUY"
+         oi_signal = "STRONGBUY"
     elif change_call_OI > 3 * change_put_OI:
-        oi_signal = "STRONG SELL"
+        oi_signal = "STRONGSELL"
     
     futures_vwap = 0
-    dataToSave = [current_time, sum_call_OI, change_call_OI, sum_put_OI, change_put_OI,  diff_change_Call_OI_and_change_put_OI, oi_signal , pcr, future_ltp, futures_vwap]
+    dataToSave = [current_date, current_time, sum_call_OI, change_call_OI, sum_put_OI, change_put_OI,  diff_change_Call_OI_and_change_put_OI, oi_signal , pcr, future_ltp, futures_vwap]
     
     stringdata = ' '.join([str(i) for i in dataToSave])
     rowData.append(dataToSave)
     # SaveToDB(dataToSave)
     SaveToTxtFile(stringdata)
-    data_For_rows = []
-    for a in ReadFromTextFile():
-        data_For_rows.append(ConvertToList(a))
-    return render_template('index.html', columns=columns, rowdata=data_For_rows)
+    # data_For_rows = []
+    # for a in ReadFromTextFile():
+    #     data_For_rows.append(ConvertToList(a))
+    # return render_template('index.html', columns=columns, rowdata=data_For_rows)
 
 @app.route('/trendingoi')
 def trendingoi():
@@ -190,7 +196,8 @@ def trendingoi():
     # # Encode PNG image to base64 string
     # pngImageB64String = "data:image/png;base64,"
     # pngImageB64String += base64.b64encode(pngImage.getvalue()).decode('utf8')
-
+    # SaveTrendingOiToTxtFile(trendingOIData)
+    trendingOIData.reverse()
     return render_template("trendingoi.html", oi_data=trendingOIData, columns=columns)
 
 #ternding OI is top 5 change in OI strike with CE/PE
@@ -326,3 +333,48 @@ def ReadFromTextFile():
 def ConvertToList(string):
     li = list(string.split(" "))
     return li
+
+def ReadFromTextFileAndConvertToList():
+    data_For_rows = []
+    for a in ReadFromTextFile():
+        data_For_rows.append(ConvertToList(a))
+    data_For_rows.reverse()
+    return data_For_rows
+
+def clearTextFile():
+    now = datetime.now()
+    current_date = now.strftime("%d-%m-%y")
+    date_2_days_ago = now - timedelta(days=2)
+    date2 = date_2_days_ago.strftime("%d-%m-%y")
+    
+    # dataFromFile= ReadFromTextFileAndConvertToList()
+    # records_to_be_deleted = [x for x in dataFromFile if x[0] == date2]
+    # print(records_to_be_deleted)
+    
+    # with open("oi_data.txt", "r") as fp:
+    #     lines = fp.readlines()
+
+    # with open("oi_data.txt", "w") as fp:
+    #     for line in lines:
+    #         if line.strip("\n") != date2:
+    #             fp.write(line)
+    
+    
+    with open("oi_data.txt", "r+") as f:
+        d1 = f.readlines()
+        f.seek(0)
+        for i in d1:
+            if i != date2:
+                f.write(i)
+        f.truncate()
+
+def SaveTrendingOiToTxtFile(trendingOiData):
+    with open("trending_oi.txt", "a+") as file_object:
+        # Move read cursor to the start of file.
+        file_object.seek(0)
+        # If file is not empty then append '\n'
+        data = file_object.read(100)
+        if len(data) > 0 :
+            file_object.write("\n")
+        # Append text at the end of file
+        file_object.write(trendingOiData)

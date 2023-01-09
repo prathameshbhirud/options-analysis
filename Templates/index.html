@@ -36,9 +36,9 @@
         
     </style>
     <script type="text/javascript">
-        setTimeout(function () {
+        setInterval(function () {
           var date =new Date();
-          if (date.getHours() >= 9 && date.getHours() <= 21 ) {
+          if (date.getHours() >= 9 && date.getHours() <= 16 ) {
             location.reload();
           }
           //location.reload();
@@ -62,10 +62,6 @@
         </tr>
         {% for row in rowdata %}
         <tr>
-            
-            <td>
-                {{ row[0] }}
-            </td>
             <td>
                 {{ row[1] }}
             </td>
@@ -92,6 +88,9 @@
             </td>
             <td>
                 {{ row[9] }}
+            </td>
+            <td>
+                {{ row[10] }}
             </td>
         </tr>
         {% endfor %}
